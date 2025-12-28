@@ -1,0 +1,36 @@
+# Python / Flask
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+instance/
+.flaskenv
+
+# Local
+.local/
+attached_assets
+
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+
+# Application Runtime Data
+downloads/
+tmp/
+temp/
+*.log
+*.sqlite3
+
+# Secrets & Configuration
+.env
+
+# OS & Editor Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - {{ video_info.title }}</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i data-feather="play" class="me-2"></i>
+                Video Preview
+            </h1>
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                <i data-feather="arrow-left" class="me-2"></i>
+                Back to Downloads
+            </a>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Video Player -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="monitor" class="me-2"></i>
+                    {{ video_info.title }}
+                    {% if video_info.resolution %}
+                        <span class="badge bg-primary ms-2">{{ video_info.resolution }}{% if video_info.fps and video_info.fps > 30 %} @ {{ video_info.fps }}fps{% endif %}</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <!-- Video Player -->
+                        <div class="ratio ratio-16x9 mb-3">
+                            <video id="preview-video" 
+                                   class="rounded" 
+                                   controls 
+                                   preload="metadata"
+                                   poster="{{ video_info.thumbnail }}">
+                                <source src="{{ video_info.stream_url }}" type="{{ video_info.mime_type }}">
+                                <p>Your browser doesn't support HTML5 video. <a href="{{ video_info.stream_url }}">Download the video</a> instead.</p>
+                            </video>
+                        </div>
+                        
+                        <!-- Video Controls -->
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-outline-primary" onclick="playPause()">
+                                <i data-feather="play" id="play-icon"></i>
+                                <span id="play-text">Play</span>
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="toggleMute()">
+                                <i data-feather="volume-2" id="volume-icon"></i>
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="toggleFullscreen()">
+                                <i data-feather="maximize" id="fullscreen-icon"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Download Actions -->
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('download_video', format_id=video_info.itag) }}?url={{ video_info.url }}" 
+                               class="btn btn-success"
+                               onclick="startDownload('{{ video_info.url.split('v=')[1].split('&')[0] if 'v=' in video_info.url else '' }}')">
+                                <i data-feather="download" class="me-2"></i>
+                                Download This Quality
+                            </a>
+                            <button class="btn btn-outline-info" onclick="copyStreamUrl()">
+                                <i data-feather="copy" class="me-2"></i>
+                                Copy Stream URL
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <!-- Video Information -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="card-title mb-0">Stream Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center">
+                                            <i data-feather="user" class="me-2 text-muted"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Channel</small>
+                                                <strong>{{ video_info.author }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if video_info.resolution %}
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <i data-feather="monitor" class="me-2 text-muted"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Resolution</small>
+                                                <strong>{{ video_info.resolution }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% if video_info.fps %}
+                                    <div class="col-6">
+                                        <div class="d-flex align-items-center">
+                                            <i data-feather="zap" class="me-2 text-muted"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Frame Rate</small>
+                                                <strong>{{ video_info.fps }} fps</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center">
+                                            <i data-feather="file" class="me-2 text-muted"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Format</small>
+                                                <strong>{{ video_info.mime_type }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="d-flex align-items-center">
+                                            <i data-feather="hash" class="me-2 text-muted"></i>
+                                            <div>
+                                                <small class="text-muted d-block">Stream ID</small>
+                                                <strong>{{ video_info.itag }}</strong>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Modal (reused from main page) -->
+        <div class="modal fade" id="progressModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i data-feather="download" class="me-2"></i>
+                            Downloading Video
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <span id="progress-text">Preparing download...</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        feather.replace();
+        
+        const video = document.getElementById('preview-video');
+        const playIcon = document.getElementById('play-icon');
+        const playText = document.getElementById('play-text');
+        const volumeIcon = document.getElementById('volume-icon');
+        const fullscreenIcon = document.getElementById('fullscreen-icon');
+
+        // Play/Pause functionality
+        function playPause() {
+            if (video.paused) {
+                video.play();
+                feather.replace({'play': 'pause'});
+                playText.textContent = 'Pause';
+            } else {
+                video.pause();
+                feather.replace({'pause': 'play'});
+                playText.textContent = 'Play';
+            }
+        }
+
+        // Mute/Unmute functionality
+        function toggleMute() {
+            video.muted = !video.muted;
+            volumeIcon.setAttribute('data-feather', video.muted ? 'volume-x' : 'volume-2');
+            feather.replace();
+        }
+
+        // Fullscreen functionality
+        function toggleFullscreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+            } else {
+                video.requestFullscreen();
+            }
+        }
+
+        // Copy stream URL to clipboard
+        function copyStreamUrl() {
+            navigator.clipboard.writeText('{{ video_info.stream_url }}').then(() => {
+                showTemporaryMessage('Stream URL copied to clipboard!', 'success');
+            }).catch(() => {
+                showTemporaryMessage('Failed to copy stream URL', 'error');
+            });
+        }
+
+        // Update play/pause icon based on video state
+        video.addEventListener('play', () => {
+            playIcon.setAttribute('data-feather', 'pause');
+            playText.textContent = 'Pause';
+            feather.replace();
+        });
+
+        video.addEventListener('pause', () => {
+            playIcon.setAttribute('data-feather', 'play');
+            playText.textContent = 'Play';
+            feather.replace();
+        });
+
+        // Handle fullscreen changes
+        document.addEventListener('fullscreenchange', () => {
+            fullscreenIcon.setAttribute('data-feather', document.fullscreenElement ? 'minimize' : 'maximize');
+            feather.replace();
+        });
+    </script>
+</body>
+</html>

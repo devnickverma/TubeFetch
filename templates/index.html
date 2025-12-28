@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeFetch - Personal Portfolio Project</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <!-- Disclaimer -->
+        <div class="alert alert-warning text-center mb-4" role="alert">
+            <strong>Educational use only</strong>. This is a personal portfolio project demonstrating Flask, Celery-like async tasks, and FFmpeg. Not for public distribution or commercial use.
+        </div>
+
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-4 mb-3">
+                <i data-feather="download" class="me-3"></i>
+                TubeFetch
+            </h1>
+            <p class="lead text-muted">Portfolio Video Downloader</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- URL Input Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i data-feather="link" class="me-2"></i>
+                    Enter YouTube URL
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('analyze_video') }}">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i data-feather="youtube"></i>
+                        </span>
+                        <input type="url" 
+                               class="form-control form-control-lg" 
+                               name="url" 
+                               placeholder="https://www.youtube.com/watch?v=..." 
+                               required
+                               value="{{ request.form.get('url', '') }}">
+                        <button type="submit" class="btn btn-primary btn-lg px-4">
+                            <i data-feather="search" class="me-2"></i>
+                            Analyze
+                        </button>
+                    </div>
+                    <div class="form-text mt-2">
+                        Max duration: 20 mins. Max resolution: 1080p.
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Video Information -->
+        {% if video_info %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <img src="{{ video_info.thumbnail }}" 
+                             class="img-fluid rounded" 
+                             alt="Video thumbnail"
+                             style="max-height: 200px; width: 100%; object-fit: cover;">
+                    </div>
+                    <div class="col-md-8">
+                        <h4 class="mb-3">{{ video_info.title }}</h4>
+                        <div class="d-flex gap-4">
+                            <div><i data-feather="user" class="me-2"></i> {{ video_info.author }}</div>
+                            <div><i data-feather="clock" class="me-2"></i> {{ video_info.length }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Auto-Merged High Quality Streams -->
+        {% if auto_merge_streams %}
+        <div class="card mb-4">
+            <div class="card-header bg-primary">
+                <h6 class="card-title mb-0 text-white">
+                    <i data-feather="zap" class="me-2"></i>
+                    High Quality (Auto-Merged)
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for stream in auto_merge_streams %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold me-2">{{ stream.resolution }}</span>
+                            <span class="badge bg-success">Auto-Merged</span>
+                            <div class="small text-muted">
+                                MP4 • Video: {{ stream.vcodec }} • Audio: {{ stream.acodec }}
+                            </div>
+                        </div>
+                        <button class="btn btn-sm btn-primary"
+                                onclick="initiateDownload('{{ video_info.url }}', '{{ stream.video_format_id }}', 'merge', '{{ stream.audio_format_id }}')">
+                             <i data-feather="download"></i> Download
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Mixed Streams -->
+        <div class="row">
+            <!-- Video + Audio -->
+            {% if video_audio_streams %}
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">Video + Audio (Standard)</div>
+                    <div class="list-group list-group-flush">
+                        {% for stream in video_audio_streams %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">{{ stream.resolution }}</div>
+                                <small class="text-muted">{{ stream.ext }} • {{ stream.filesize }}</small>
+                            </div>
+                            <div class="btn-group">
+                                <a href="{{ url_for('preview_video') }}?url={{ video_info.url }}&itag={{ stream.format_id }}" 
+                                   class="btn btn-sm btn-outline-secondary" target="_blank" title="Preview">
+                                   <i data-feather="play" width="14"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-primary"
+                                        onclick="initiateDownload('{{ video_info.url }}', '{{ stream.format_id }}', 'single')">
+                                    <i data-feather="download" width="14"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Video Only -->
+            {% if video_only_streams %}
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">Video Only (No Audio)</div>
+                    <div class="list-group list-group-flush">
+                        {% for stream in video_only_streams %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">{{ stream.resolution }}</div>
+                                <small class="text-muted">{{ stream.ext }} • {{ stream.filesize }}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary"
+                                    onclick="initiateDownload('{{ video_info.url }}', '{{ stream.format_id }}', 'single')">
+                                <i data-feather="download" width="14"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Audio Only -->
+            {% if audio_only_streams %}
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-warning text-dark">Audio Only</div>
+                    <div class="list-group list-group-flush">
+                        {% for stream in audio_only_streams %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="fw-bold">Audio</div>
+                                <small class="text-muted">{{ stream.ext }} • {{ stream.filesize }}</small>
+                            </div>
+                            <button class="btn btn-sm btn-outline-dark"
+                                    onclick="initiateDownload('{{ video_info.url }}', '{{ stream.format_id }}', 'single')">
+                                <i data-feather="download" width="14"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Modal -->
+        <div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Processing Download</h5>
+                    </div>
+                    <div class="modal-body">
+                        <div class="progress mb-3">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <p class="text-center text-muted" id="progress-text">Initializing...</p>
+                        <div class="alert alert-info small">
+                            <i data-feather="info" width="14"></i> Please do not close this tab. Large files may take a few minutes to merge.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.reload()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-5 pt-4 border-top">
+            <p class="text-muted small">
+                TubeFetch (Portfolio Project) | Educational Purposes Only
+            </p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>feather.replace();</script>
+</body>
+</html>
