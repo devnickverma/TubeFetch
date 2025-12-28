@@ -1,47 +1,42 @@
 # TubeFetch 🎬
 
-TubeFetch is a Flask-based asynchronous YouTube video downloader built as a personal and educational portfolio project. 
+**A local YouTube video downloader for educational and personal use.**
 
-It handles video downloads via background jobs to ensure responsiveness and stability, supporting high-quality video (up to 1080p), audio merging using FFmpeg, and automatic resource cleanup.
+TubeFetch is a Flask-based application that allows you to download YouTube videos locally on your machine with automatic video+audio merging using FFmpeg.
+
+> **⚠️ Important**: This project is designed to run **locally only** for educational and personal use. It is **not intended for public cloud deployment or commercial use**.
 
 ## 🎥 Project Output / Demo
 
 ![TubeFetch Demo](output/output.gif)
-*The GIF above demonstrates the application workflow: analyzing a video, selecting quality, tracking progress, and downloading the final merged file.*
+*The GIF above demonstrates the application workflow: analyzing a video, selecting quality, and downloading the final merged file.*
 
 ## 🚀 Features
 
-- **Asynchronous Background Downloads**: Utilizes background threads to handle downloads without blocking the web server.
-- **High-Quality Merging**: Automatically combines best video and audio streams using FFmpeg for 1080p+ quality.
-- **Real-Time Progress**: Live polling of download and conversion status.
-- **Smart Resource Management**: Enforces single active job limits to prevent server overload.
-- **Auto-Cleanup**: Automatically cleans up temporary files and finished downloads to maintain zero disk waste.
-- **Cloud-Safe Architecture**: Designed to run reliably on free-tier hosting services with strict timeouts.
-
-## 🧠 How It Works
-
-1. **User submits a YouTube URL** via the web interface.
-2. **Video metadata is analyzed** to present available formats and qualities.
-3. **A background job starts** when the user selects a download option.
-4. **Progress is tracked** via client-side polling while the server handles the heavy lifting.
-5. **Video and audio are merged** (if required) using FFmpeg.
-6. **File is delivered** to the user immediately upon completion.
-7. **Temporary files are deleted** instantly to free up resources.
+- **Unrestricted Downloads**: No artificial limits on video duration, resolution, or file size
+- **Best Quality**: Downloads the best available video and audio streams
+- **Automatic Merging**: Uses FFmpeg to merge video and audio into a single MP4 file
+- **Simple Interface**: Clean Flask-based web UI
+- **Local Storage**: All downloads saved to local `downloads/` directory
+- **Progress Tracking**: Real-time download progress feedback
 
 ## 🛠️ Setup & Run Locally
 
 ### Prerequisites
 - **Python 3.9+** or **3.10+**
-- **FFmpeg**: Must be installed and added to your system's PATH.
-  - *Windows*: Download and add `bin` folder to Environment Variables.
+- **FFmpeg**: Must be installed and added to your system's PATH
+  - *Windows*: Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add `bin` folder to Environment Variables
   - *Mac*: `brew install ffmpeg`
   - *Linux*: `sudo apt install ffmpeg`
 
 ### Installation
 
-1. **Clone the repository** (if applicable) or navigate to the project folder.
+1. **Navigate to the project folder**:
+   ```bash
+   cd TubeFetch
+   ```
 
-2. **Create a virtual environment** (optional but recommended):
+2. **Create a virtual environment** (recommended):
    ```bash
    python -m venv venv
    # Windows
@@ -61,19 +56,46 @@ It handles video downloads via background jobs to ensure responsiveness and stab
    ```bash
    python app.py
    ```
+
 2. Open your browser and navigate to:
    ```
    http://127.0.0.1:5000
    ```
 
-## ⚠️ Limitations
+3. Enter a YouTube URL, select your preferred quality, and download!
 
-- **Performance**: Large 1080p videos may take several minutes to process on free-tier hosting compared to local execution.
-- **Duration Limit**: Support is limited to videos under **60 minutes**.
-- **Concurrency**: To ensure stability, **only one download job** can run at a time.
-- **Scope**: Designed strictly for personal/portfolio demonstration, not high-volume public use.
+## 📂 Project Structure
+
+```
+TubeFetch/
+├── app.py              # Main Flask application
+├── templates/          # HTML templates
+│   ├── index.html     # Main UI
+│   └── preview.html   # Video preview
+├── static/            # CSS and JavaScript
+├── downloads/         # Downloaded videos (created automatically)
+└── requirements.txt   # Python dependencies
+```
+
+## 🎯 How It Works
+
+1. User submits a YouTube URL via the web interface
+2. yt-dlp analyzes the video and extracts available formats
+3. User selects desired quality (or auto-merge option)
+4. yt-dlp downloads video and audio streams
+5. FFmpeg merges them into a single MP4 file
+6. File is delivered to the user's browser
+7. Video is saved in the `downloads/` folder
 
 ## 📜 Disclaimer
 
-This project is for **educational and personal portfolio purposes only**.  
-Users are responsible for complying with YouTube’s Terms of Service. This application is not intended for commercial use or public distribution.
+This project is for **educational and personal use only**.  
+Users are responsible for complying with YouTube's Terms of Service.  
+This application is not intended for commercial use, public distribution, or cloud deployment.
+
+## 🔧 Technical Notes
+
+- Uses `yt-dlp` for video extraction and downloading
+- Requires local FFmpeg installation for stream merging
+- Runs on Flask development server (localhost only)
+- All processing happens server-side (your local machine)
