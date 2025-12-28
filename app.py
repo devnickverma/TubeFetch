@@ -93,12 +93,20 @@ class DownloadManager:
             temp_dir = tempfile.mkdtemp(prefix=f"tubefetch_{job_id}_")
             self.update_job(job_id, status='downloading', temp_dir=temp_dir, status_text='Initializing...')
 
+            # Force yt-dlp to ensure FFmpeg is available (downloads if missing)
+            try:
+                import yt_dlp.utils
+                yt_dlp.utils.check_executable("ffmpeg") 
+            except Exception as ex:
+                logging.warning(f"FFmpeg check warning: {ex}")
+
             # Common options
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'paths': {'home': temp_dir},
                 'progress_hooks': [lambda d: self._progress_hook(job_id, d)],
+                'ffmpeg_location': None, # Allow auto-download of static ffmpeg if missing
             }
 
             # Determine mode
@@ -247,6 +255,7 @@ def analyze_video():
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            'ffmpeg_location': None, # Allow auto-download
         }
         
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
