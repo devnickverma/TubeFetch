@@ -8,6 +8,17 @@ __pycache__/
 instance/
 .flaskenv
 
+# Replit / tooling junk
+replit.md
+.replit
+pyproject.toml
+uv.lock
+attached_assets/
+
+# Python cache
+__pycache__/
+
+
 # Local
 .local/
 attached_assets
